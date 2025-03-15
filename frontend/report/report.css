@@ -1,0 +1,237 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 30px 0 60px 0px; /* Oben 30px, unten 60px */
+    box-sizing: border-box;
+    max-width: 90%;
+    margin: auto;
+}
+
+#title {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 3rem;
+    color: #333
+}
+
+/* Container für Layout und Tabelle mit Station-Info */
+.container {
+    display: flex;
+    gap: 20px; /* Abstand zwischen Layout und Station-Info */
+    margin-top: 20px;
+}
+
+#layout {
+    flex: 5;
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+#station-info {
+    flex: 2;
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Box Style für Layout und Station-Info */
+.box-style {
+    border: 1px solid #ddd;
+    padding: 15px;
+}
+
+/* Grid-Container für die Graphen */
+.grid-container {
+    display: grid;
+    gap: 3px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.image-container {
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: auto; /* Zentriert das Grid auf der Seite */
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); /* Mindestgröße der Graphen: 500px */
+}
+
+.image-container img {
+    max-width: 800px; /* Maximale Größe der Graphen: 800px */
+    height: auto;
+    display: block;
+    margin: auto;
+}
+
+.image-container:has(img:nth-child(2)):not(:has(img:nth-child(3))) {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-areas: 
+    "img1 img2";
+}
+
+
+/* Bei 3 Bildern wenn möglich nebeneinander */
+.image-container:has(img:nth-child(3)) {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas: 
+        "img1 img2 img3";
+}
+
+.image-container:has(img:nth-child(4)) {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-areas: 
+        "img1 img2"
+        "img3 img4";
+}
+
+.image-container img:nth-child(1) { grid-area: img1; }
+.image-container img:nth-child(2) { grid-area: img2; }
+.image-container img:nth-child(3) { grid-area: img3; }
+
+.station:hover {
+    transform: scale(1.02);
+}
+
+.station-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.station {
+    padding: 10px;
+    border: 5px solid #0E9682;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.station.selected {
+    background-color: #0E9682;
+    color: white;
+}
+
+.station-content h2 {
+    margin-bottom: 0.5em; /* Vertikale Ausrichtung */
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.layout-title {
+    text-align: left;
+}
+
+#station-title {
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+.container h3 {
+    text-align: left;
+    margin-top: 5px;
+    font-weight: normal;
+}
+
+button {
+    padding: 10px 15px;
+    background-color: transparent; /* Keine Füllung */
+    color: black;
+    border: 3px solid #0E9682;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 10px;
+    width: 200px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-weight: bold;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+}
+
+.objective-button {
+    margin: 5px;  /* Abstand zwischen Buttons */
+    display: inline-block;  /* Verhindert, dass sie sich direkt berühren */
+}
+
+.objective-button.selected {
+    background-color: #0E9682;
+    color: white;
+}
+
+button:hover {
+    transform: scale(1.02);
+}
+
+.cost-table {
+    width: 100%;
+    margin: 40px auto;
+    border-collapse: collapse;
+    text-align: center;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Table mit Kostenübersicht */
+.cost-table, 
+.cost-table th, 
+.cost-table td {
+    border: 1px solid #e0e0e0;
+}
+
+.cost-table th, 
+.cost-table td {
+    padding: 15px;
+    font-size: 16px;
+    color: #555;
+}
+
+.cost-table th {
+    background-color: #0E9682;
+    color: white;
+}
+
+.cost-table td {
+    background-color: #f9f9f9;
+}
+
+/* Table mit Informationen zu den einzalnen Tasks in Station-Info */
+.station-info-table {
+    width: 100%;
+    margin-top: 25px;
+    border-collapse: collapse;
+    text-align: center;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.station-info-table, 
+.station-info-table th, 
+.station-info-table td {
+    border: 1px solid #e0e0e0;
+}
+
+.station-info-table th, 
+.station-info-table td {
+    padding: 15px;
+    font-size: 16px;
+    color: #555;
+}
+
+.station-info-table th {
+    background-color: #0E9682;
+    color: white;
+}
+
+.station-info-table td {
+    background-color: #f9f9f9;
+}

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results</title>
+    <link rel="stylesheet" href="report.css">
+</head>
+<body>
+    <h1 id="title">Assembly Line Balancing Report</h1>
+
+    <div id="graphContainer" class="image-container"></div>
+
+    <table class="cost-table">
+        <thead>
+            <tr>
+                <th>Objective</th>
+                <th>Number of Processes</th>
+                <th>Number of Stations</th>
+                <th>Total Cost of Ownership</th>
+                <th>Initial Investment Cost</th>
+                <th>Expected Labor Costs</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <div class="button-container"></div>
+
+    <div class="container">
+        <div id="layout" class="box-style">
+            <h2 id="layout-title">Potential Layout</h2>
+            <div class="grid-container" id="u-layout"></div>
+        </div>
+        <div id="station-info" class="box-style">
+            <h2 id="station-title">Station {stationId}</h2>
+            <h3 id="parallel-stations"></h3>
+            <table class="station-info-table">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Description</th>
+                        <th>Task Time</th>
+                    </tr>
+                </thead>
+                <tbody id="task-info"></tbody>
+            </table>
+    </div>
+
+    <script src="report.js?v=${Date.now()}"></script>
+</body>
+</html>

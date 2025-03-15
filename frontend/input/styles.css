@@ -1,0 +1,212 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    text-align: center;
+    margin: 20px;
+}
+
+.container {
+    max-width: 700px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+    margin: auto;
+}
+
+h2 {
+    color: #333;
+}
+
+.section {
+    margin: 20px 0;
+    text-align: left;
+}
+
+label {
+    font-weight: bold;
+}
+
+.checkbox-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+input[type="number"]{
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.button-container {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    width: 100%;
+}
+
+.button {
+    background-color: #0E9682;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.start-button {
+    flex: 3;
+}
+
+.reset-button {
+    flex: 1;
+}
+
+.button:hover {
+    background-color: #0E9682;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.button:active {
+    transform: scale(0.98);
+}
+
+#error-message {
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+.progress-bar {
+    width: 100%;
+    background-color: #ddd;
+    border-radius: 5px;
+    margin-top: 0px;
+    display: none;
+}
+
+.progress {
+    height: 10px;
+    background-color: #0E9682;
+    width: 0%;
+    border-radius: 5px;
+}
+
+#progress-message {
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+.hidden {
+    display: none;
+}
+
+#arrow {
+    display: inline-block;
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Einklappbare Sektion */
+.collapsible {
+    background-color: #f1f1f1;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: left;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.content {
+    max-height: 0; /* Start-Zustand: Komplett versteckt */
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, padding 0.3s ease-out;
+    background-color: #ffffff;
+    padding: 0 10px;
+}
+
+.open {
+    max-height: 500px;
+    padding: 10px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    text-align: center;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    width: 300px; /* Optional: Breite des Modals anpassen */
+}
+
+/* Container für Buttons (Flexbox) */
+.modal-buttons {
+    display: flex;
+    justify-content: space-between; /* Buttons auseinanderziehen */
+    gap: 10px; /* Abstand zwischen den Buttons */
+    margin-top: 15px;
+}
+
+/* Stile für die Buttons */
+.modal-button-yes {
+    background-color: #0E9682;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    flex: 1; /* Beide Buttons nehmen gleich viel Platz ein */
+    font-weight: bold;
+}
+
+.modal-button-no {
+    background-color: #ccc;
+    color: black;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    flex: 1;
+    font-weight: bold;
+}
+
+.modal-buttons button:hover {
+    transform: scale(1.02);
+}
