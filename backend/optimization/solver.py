@@ -30,9 +30,6 @@ class Solver:
         ----------
         model: pyomo.environ.ConcreteModel
             The optimization model to be solved
-        solver_name: str
-            The name of the solver to be used. 
-            Available solvers: "gurobi", "scip"
         time_limit: int
             The time limit (in seconds) for the optimization process before it terminates
         """
