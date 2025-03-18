@@ -19,7 +19,7 @@ FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
 app.mount("/input", StaticFiles(directory=os.path.join(FRONTEND_DIR, "input"), html=True), name="input")
 app.mount("/report", StaticFiles(directory=os.path.join(FRONTEND_DIR, "report"), html=True), name="report")
 
-solver = Solver(solver_name="gurobi")
+solver = Solver()
 
 optimization_data = {
     "task_information": None,

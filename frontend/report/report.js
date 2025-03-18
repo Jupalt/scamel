@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", async function () {
     const tableBody = document.querySelector(".cost-table tbody");
-    console.log("Haaaaallllloooooo")
     try {
         const stationResultsResponse = await fetch("/get-station-results", {
             method: "GET",
@@ -51,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
             const row = document.createElement("tr");
             row.innerHTML = `
-                <td>${formatTitle(objective)}</td>
+                <td><strong>${formatTitle(objective)}<strong></td>
                 <td>${numberOfStations}</td>
                 <td>${totalNumberOfStations}</td>
                 <td>${parseInt(costOfOwnership).toLocaleString("en-US")}¥</td>
@@ -65,6 +64,9 @@ document.addEventListener("DOMContentLoaded", async function () {
         loadGraphs(objectives)
 
         createObjectiveButtons(stationResults, taskDescriptions, taskTimes);
+        document.getElementById("download-btn").addEventListener("click", function () {
+            createPDF(objectives, tableData);
+        });        
 
     } catch (error) {
         console.error("Fehler beim Erstellen der Datei", error);
@@ -268,5 +270,100 @@ function showTaskDescription(stationId, stations, parallel_stations, taskDescrip
         row.appendChild(descriptionCell);
         row.appendChild(taskTimesCell);
         taskTableBody.appendChild(row);
+    });
+}
+
+async function createPDF(objectives, tableData) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // **Überschrift zentrieren**
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    const pageWidth = doc.internal.pageSize.width;
+    const text = "Assembly Line Balancing Report";
+    const textWidth = doc.getTextWidth(text);
+    doc.text(text, (pageWidth - textWidth) / 2, 15);
+
+    // **Tabelle hinzufügen**
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.autoTable({
+        startY: 25,
+        head: [["Objective", "Number of Processes", "Number of Stations", "Total Cost of Ownership", "Initial Investment Cost", "Labor Costs"]],
+        body: objectives.map(obj => [
+            formatTitle(obj),
+            tableData[obj]?.number_of_stations ?? 0,
+            tableData[obj]?.total_number_of_stations ?? 0,
+            `${parseInt(tableData[obj]?.cost_of_ownership ?? 0).toLocaleString("en-US")}¥`,
+            `${parseInt(tableData[obj]?.fix_costs ?? 0).toLocaleString("en-US")}¥`,
+            `${parseInt(tableData[obj]?.labor_costs ?? 0).toLocaleString("en-US")}¥`
+        ]),
+        headStyles: { fillColor: [14, 150, 130], textColor: [255, 255, 255], fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [240, 240, 240] }
+    });
+
+    let startY = doc.autoTable.previous.finalY + 10; // Position unter der Tabelle
+
+    // **Bilder laden und Höhe automatisch berechnen**
+    let imageBlobs = await Promise.all(objectives.map(async (objective) => {
+        try {
+            let response = await fetch(`/graph/${objective}?t=${Date.now()}`, {
+                method: "GET",
+                headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
+            });
+
+            if (!response.ok) throw new Error(`Fehler beim Laden: ${response.status}`);
+
+            let blob = await response.blob();
+            return { blob, objective };
+        } catch (error) {
+            console.error("Fehler beim Laden des Graphs:", error);
+            return null;
+        }
+    }));
+
+    imageBlobs = imageBlobs.filter(img => img !== null); // Entferne fehlerhafte Bilder
+
+    const maxWidth = 100; // Maximale Breite in mm
+    const margin = 5; // Abstand zwischen den Bildern
+    const pageMargin = 10; // Seitenrand
+
+    let y = startY;
+    let x = pageMargin;
+
+    for (let i = 0; i < imageBlobs.length; i++) {
+        const img = new Image();
+        img.src = URL.createObjectURL(imageBlobs[i].blob);
+
+        await new Promise((resolve) => {
+            img.onload = function () {
+                const aspectRatio = img.naturalHeight / img.naturalWidth; // Höhe/Breite-Verhältnis
+                const imgHeight = maxWidth * aspectRatio; // Automatisch berechnete Höhe
+
+                if (i % 2 === 1) {
+                    x = pageWidth - pageMargin - maxWidth; // Rechtsbündiges Bild
+                } else {
+                    x = pageMargin; // Linksbündiges Bild
+                    if (i > 0) y += imgHeight + margin; // Neue Zeile nach jedem zweiten Bild
+                }
+
+                doc.addImage(img, "PNG", x, y, maxWidth, imgHeight);
+                resolve();
+            };
+        });
+    }
+
+    doc.save("Assembly_Line_Balancing_Report.pdf");
+}
+
+
+// **Hilfsfunktion: Blob in Base64 konvertieren für jsPDF**
+async function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
     });
 }

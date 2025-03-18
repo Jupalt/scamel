@@ -3,15 +3,17 @@ This module contains the function for solving the optimization model using a spe
 Available solvers:
     - Gurobi
     - SCIP
+    - Appsi Highs
 """
 
 from pyomo.opt import SolverFactory, TerminationCondition
 from optimization.result import Result
 import logging
 
+SOLVER_NAME = "gurobi" # Alternative: appsi_highs
 class Solver: 
-    def __init__(self, solver_name):
-        self.solver_name = solver_name
+    def __init__(self):
+        self.solver_name = SOLVER_NAME
         self.solver = None
 
     def solve(self, models, time_limit):

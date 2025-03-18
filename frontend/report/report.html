@@ -7,7 +7,22 @@
     <link rel="stylesheet" href="report.css">
 </head>
 <body>
-    <h1 id="title">Assembly Line Balancing Report</h1>
+    <!-- Container für zentrierten Titel und rechten Button -->
+    <div style="display: flex; justify-content: center; position: relative; padding: 10px 20px;">
+        <h1 style="text-align: center; margin: 0;">Assembly Line Balancing Report</h1>
+        <button id="download-btn" style="
+            position: absolute;
+            right: 20px;
+            background-color: #0E9682;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        ">Download PDF</button>
+    </div>
+
 
     <div id="graphContainer" class="image-container"></div>
 
@@ -46,7 +61,8 @@
                 <tbody id="task-info"></tbody>
             </table>
     </div>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <script src="report.js?v=${Date.now()}"></script>
 </body>
 </html>

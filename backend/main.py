@@ -7,4 +7,5 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
+
 api.start_server()
