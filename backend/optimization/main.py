@@ -1,6 +1,6 @@
-from optimization.model import AssemblyLineModel as ALM
-import optimization.solver as solver
-from optimization.result import Result
+from backend.optimization.model import AssemblyLineModel as ALM
+import backend.optimization.solver as solver
+from backend.optimization.result import Result
 import pickle
 from collections import defaultdict
 import logging

@@ -7,7 +7,7 @@ Available solvers:
 """
 
 from pyomo.opt import SolverFactory, TerminationCondition
-from optimization.result import Result
+from backend.optimization.result import Result
 import logging
 
 SOLVER_NAME = "gurobi" # Alternative: appsi_highs

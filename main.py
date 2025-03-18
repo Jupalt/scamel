@@ -1,4 +1,4 @@
-import api.main as api
+import backend.api.main as api
 import logging
 
 logging.basicConfig(

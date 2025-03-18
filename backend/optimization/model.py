@@ -1,8 +1,8 @@
 import logging
 from pyomo.environ import *
-from optimization.constraints import *
-from optimization.objectives import *
-import optimization.filter as filter
+from backend.optimization.constraints import *
+from backend.optimization.objectives import *
+import backend.optimization.filter as filter
 
 class AssemblyLineModel:
     def __init__(self, objective_function):

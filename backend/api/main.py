@@ -4,9 +4,9 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
 from typing import List, Any
-import api.data_processing as dp
-import optimization.main as optimizer
-from optimization.solver import Solver
+import backend.api.data_processing as dp
+import backend.optimization.main as optimizer
+from backend.optimization.solver import Solver
 import pickle
 import json
 import os
@@ -156,5 +156,5 @@ def get_graph(objective: str):
 def start_server(port=8000):
     logging.getLogger("uvicorn.access").handlers = []  # Entfernt alle Handler für HTTP-Logs
     logging.getLogger("uvicorn.access").propagate = False
-    uvicorn.run("api.main:app", host="127.0.0.1", port=port, log_level="info", access_log=False)
+    uvicorn.run("backend.api.main:app", host="127.0.0.1", port=port, log_level="info", access_log=False)
     
