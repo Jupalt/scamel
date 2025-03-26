@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    .tooltip {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.75);
+      color: white;
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 4px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+  </style>
+</head>
+<body>
+
+<div id="chart"></div>
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+  const data = [
+    { station: 'Station 1', task: 'Task 101', time: 5, station_type: 'A' },
+    { station: 'Station 1', task: 'Task 102', time: 8, station_type: 'A' },
+    { station: 'Station 1', task: 'Task 103', time: 3, station_type: 'A' },
+    { station: 'Station 2', task: 'Task 104', time: 6, station_type: 'B' },
+    { station: 'Station 2', task: 'Task 105', time: 7, station_type: 'B' },
+    { station: 'Station 3', task: 'Task 106', time: 4, station_type: 'C' },
+    { station: 'Station 3', task: 'Task 107', time: 9, station_type: 'C' },
+  ];
+
+  const margin = { top: 40, right: 30, bottom: 40, left: 50 },
+        width = 800,
+        height = 400;
+
+  const svg = d3.select("#chart")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+  const tooltip = d3.select("#tooltip");
+
+  // Gruppiere nach Station
+  const grouped = d3.group(data, d => d.station);
+
+  const stations = Array.from(grouped.keys());
+
+  // Farbskala für station_type
+  const types = Array.from(new Set(data.map(d => d.station_type)));
+  const stationTypeColor = d3.scaleOrdinal()
+    .domain(types)
+    .range(d3.schemeSet2); // schöne dezente Farben
+
+  // X-Achse (Stationen)
+  const xScale = d3.scaleBand()
+    .domain(stations)
+    .range([margin.left, width - margin.right])
+    .padding(0.3);
+
+  // Y-Achse (Zeit)
+  const maxTimePerStation = Array.from(grouped.values()).map(tasks =>
+    d3.sum(tasks, d => d.time)
+  );
+  const yScale = d3.scaleLinear()
+    .domain([0, d3.max(maxTimePerStation)])
+    .range([height - margin.bottom, margin.top]);
+
+  // Achsen zeichnen
+  svg.append("g")
+    .attr("transform", `translate(0, ${height - margin.bottom})`)
+    .call(d3.axisBottom(xScale));
+
+  svg.append("g")
+    .attr("transform", `translate(${margin.left}, 0)`)
+    .call(d3.axisLeft(yScale));
+
+  // Station-Gruppen
+  const stationGroups = svg.selectAll(".station-group")
+    .data(grouped)
+    .enter()
+    .append("g")
+    .attr("class", "station-group")
+    .attr("transform", ([station]) => `translate(${xScale(station)}, 0)`);
+
+  // Rechtecke + horizontale Trennlinien + Tooltip
+  stationGroups.each(function([station, tasks]) {
+    let yOffset = 0;
+    const g = d3.select(this);
+    const station_type = tasks[0].station_type;
+    const fillColor = stationTypeColor(station_type);
+
+    for (let task of tasks) {
+      const topY = yScale(yOffset + task.time);
+      const heightBar = yScale(0) - yScale(task.time);
+
+      g.append("rect")
+        .attr("x", 0)
+        .attr("y", topY)
+        .attr("width", xScale.bandwidth())
+        .attr("height", heightBar)
+        .attr("fill", fillColor)
+        .attr("stroke", "black")
+        .attr("stroke-width", 1)
+        .on("mouseover", function(event) {
+          tooltip
+            .style("opacity", 1)
+            .html(`<strong>${task.task}</strong><br/>${task.time} Sekunden<br/>Typ: ${station_type}`);
+        })
+        .on("mousemove", function(event) {
+          tooltip
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 20) + "px");
+        })
+        .on("mouseout", function() {
+          tooltip.style("opacity", 0);
+        });
+
+      // Trennlinie oben (optional, da stroke vorhanden)
+      //g.append("line")
+      //  .attr("x1", 0)
+       // .attr("x2", xScale.bandwidth())
+       // .attr("y1", topY)
+       // .attr("y2", topY)
+       // .attr("stroke", "black")
+       // .attr("stroke-width", 1);
+
+      yOffset += task.time;
+    }
+  });
+</script>
+</body>
+</html>

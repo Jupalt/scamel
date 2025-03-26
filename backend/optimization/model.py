@@ -8,7 +8,7 @@ class AssemblyLineModel:
     def __init__(self, objective_function):
         logging.getLogger('pyomo').setLevel(logging.CRITICAL)
         self.objective_function = objective_function
-        self.enable_filter = True
+        self.enable_filter = False
         self.model = None
 
     def build_model(self, cycle_time, tasks, station_types, task_time_dict, precedence_relations,
@@ -69,6 +69,7 @@ class AssemblyLineModel:
         model.parallel_helper = Constraint(model.STATIONS, rule=parallel_helper_rule)
         model.precedence_relations = Constraint(model.PrecedencePairs, rule=precedence_relations_rule)
         model.same_station_pairs_constraint = Constraint(model.SameStationPairs, model.STATIONS, rule=same_station_pairs_rule)
+        model.incompatible_pairs_constraint = Constraint(model.IncompatiblePairs, model.STATIONS, rule=incompatible_rule)
 
         # Objective
         if self.objective_function == "Minimize_Stations":

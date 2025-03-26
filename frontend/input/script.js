@@ -1,4 +1,5 @@
 let selectedFile = null;
+let currentStatusFile = null;
 let optimizationInterval = null;
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -16,14 +17,26 @@ document.addEventListener("DOMContentLoaded", function () {
             selectedFile = null; // Falls der User die Datei entfernt
         }
     });
+    document.getElementById("status-upload").addEventListener("change", function (event) {
+        if (event.target.files.length > 0) {
+            currentStatusFile = event.target.files[0];
+        } else {
+            currentStatusFile = null; // Falls der User die Datei entfernt
+        }
+    });
     document.getElementById("show-results").addEventListener("click", function () {
         window.location.href = "../report/report.html";
     });
     window.addEventListener("beforeunload", function () {
         selectedFile = null;
+        currentStatusFile = null;
         let fileInput = document.getElementById("file-upload");
+        let statusInput = document.getElementById("status-upload");
         if (fileInput) {
             fileInput.value = "";
+        }
+        if (statusInput) {
+            statusInput.value = "";
         }
     });
 });
@@ -114,11 +127,24 @@ function startProgressBar() {
 }
 
 async function uploadData() {
-    let jsonData = await readExcelFile(selectedFile);
-    let response = await uploadToServer(jsonData);
-
+    let jsonData = await readExcelFile(selectedFile, "Task Overview");
+    let response = await uploadToServer(jsonData, "/upload-data", "task");
     if (!response.ok) {
         let errorData = await response.json();
+        throw new Error(errorData.detail || "Unknown error occurred.");
+    }
+    if (currentStatusFile) {
+        let statusData = await readExcelFile(currentStatusFile, "Current Status");
+        let responseStatusData = await uploadToServer(statusData, "/upload-current-status-data", "status");
+        if (!responseStatusData.ok) {
+            let errorData = await responseStatusData.json();
+            throw new Error(errorData.detail || "Unknown error occurred.");
+        }
+        console.log("Uploaded file successfully");
+    }
+    let responseHyperparameters = await uploadHyperparameters();
+    if (!responseHyperparameters.ok) {
+        let errorData = await responseHyperparameters.json();
         throw new Error(errorData.detail || "Unknown error occurred.");
     }
 }
@@ -157,7 +183,7 @@ async function listenForStatus() {
     checkStatus();
 }
 
-function readExcelFile(file) {
+function readExcelFile(file, sheetName) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
 
@@ -166,10 +192,8 @@ function readExcelFile(file) {
                 const data = event.target.result;
                 const workbook = XLSX.read(data, { type: "binary" });
 
-                const sheetName = "Task Overview";
-
                 if (!workbook.Sheets[sheetName]) {
-                    return reject(new Error('Error: Sheet "Task Overview" in the Excel-file not found'));
+                    return reject(new Error(`Error: Sheet ${sheetName} not found`));
                 }
 
                 const worksheet = workbook.Sheets[sheetName];
@@ -190,7 +214,27 @@ function readExcelFile(file) {
     });
 }
 
-async function uploadToServer(data) {
+async function uploadToServer(data, endpoint, fileType) { // "/upload-data"
+    let response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: data }),
+    });
+
+    if (!response.ok) {
+        if (fileType === "task") {
+            selectedFile = null;
+            document.getElementById("file-upload").value = "";
+        }
+        if (fileType === "status") {
+            currentStatusFile = null;
+            document.getElementById("status-upload").value = "";
+        }
+    }
+    return response;
+}
+
+async function uploadHyperparameters() {
     const cycleTime = document.getElementById("cycle-time").value;
     const timeLimit = document.getElementById("time-limit").value;
     const manualCost = document.getElementById("manual-cost").value;
@@ -212,20 +256,6 @@ async function uploadToServer(data) {
         objectives: getSelectedObjectives()
     };
 
-    console.log("Uploading Excel-data to server...");
-
-    let response = await fetch("/upload-data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: data }),
-    });
-
-    if (!response.ok) {
-        selectedFile = null;
-        document.getElementById("file-upload").value = "";
-        return response; // Response an uploadData() weitergeben
-    }
-
     console.log("Uploading hyperparameters...");
     
     response = await fetch("/upload-hyperparameters", {
@@ -234,7 +264,7 @@ async function uploadToServer(data) {
         body: JSON.stringify({ hyperparameters: hyperparameters }),
     });
 
-    return response; // Response an uploadData() weitergeben
+    return response;
 }
 
 function getSelectedObjectives() {

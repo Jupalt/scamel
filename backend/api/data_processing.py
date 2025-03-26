@@ -11,8 +11,8 @@ def process_input_data(data):
         
         headers = data[0]
 
-        if len(headers) < 7:
-            raise ValueError("File should have 7 columns")
+        if len(headers) < 9:
+            raise ValueError("File should have 9 columns")
         
         records = [row for row in data[1:] if any(cell is not None and str(cell).strip() for cell in row)]
 
@@ -20,16 +20,12 @@ def process_input_data(data):
 
         tasks = []
         task_time_dict = {}
-        same_station_pairs = []
         process_specific_costs = {}
         task_descriptions = {}
         station_type_compatibility = {}
 
         for index, row in enumerate(records, start=2):
             try: 
-                if len(row) < 6:
-                    raise ValueError(f"Row {index} has fewer columns than expected")
-
                 try:
                     task_id = int(row[0])
                 except ValueError:
@@ -39,7 +35,7 @@ def process_input_data(data):
                 task_descriptions[task_id] = row[1] if row[1] is not None else "Unknown"
 
                 try: 
-                    if row[2] == "n":
+                    if row[5] == "n":
                         station_type_compatibility[(task_id, "manual")] = 0
                     else:
                         station_type_compatibility[(task_id, "manual")] = 1
@@ -47,26 +43,26 @@ def process_input_data(data):
                     raise ValueError(f"Unknown error in row {row} in column 3")
                 
                 try:
-                    if row[2] == "n":
+                    if row[5] == "n":
                         task_time_dict[(task_id, "manual")] = 0
                         station_type_compatibility[(task_id, "manual")] = 0
                     else:
-                        task_time_dict[(task_id, "manual")] = int(row[2])
+                        task_time_dict[(task_id, "manual")] = int(row[5])
                         station_type_compatibility[(task_id, "manual")] = 1
                 except ValueError:
                     raise ValueError(f"Manual Task Time in row {index} is not a number or n")
 
                 try:
-                    if row[3] == "n":
+                    if row[6] == "n":
                         task_time_dict[(task_id, "automatic")] = 0
                         station_type_compatibility[(task_id, "automatic")] = 0
                     else:
-                        task_time_dict[(task_id, "automatic")] = int(row[3])
+                        task_time_dict[(task_id, "automatic")] = int(row[6])
                         station_type_compatibility[(task_id, "automatic")] = 1 
                 except ValueError:
                     raise ValueError(f"Automatic Task Time in row {index} is not a number or n")
 
-                if row[2] == "n" and row[3] == "n":
+                if row[5] == "n" and row[6] == "n":
                     raise ValueError(f"Task {task_id} in row {index} is not compatible with any station type, which makes the problem unsolvable")
 
                 def check_for_int(value, col):
@@ -77,8 +73,8 @@ def process_input_data(data):
                     except ValueError:
                         raise ValueError(f"Invalid value in row {index} in column {col} Station Cost")
                     
-                process_specific_costs[(task_id, "manual")] = check_for_int(row[4], "Manual")
-                process_specific_costs[(task_id, "automatic")] = check_for_int(row[5], "Automatic")  
+                process_specific_costs[(task_id, "manual")] = check_for_int(row[7], "Manual")
+                process_specific_costs[(task_id, "automatic")] = check_for_int(row[8], "Automatic")  
 
             except Exception as e:
                 if isinstance(e, ValueError): 
@@ -86,26 +82,10 @@ def process_input_data(data):
                 else:
                     raise ValueError(f"Invalid data in row {index}") 
 
-        for index, row in enumerate(records, start=2):
-            task_id = int(row[0])
-            try:
-                if len(row) > 6:
-                    try:
-                        a = int(row[6])
-                    except ValueError:
-                        raise ValueError(f"Station Compatibility in row {index} is not a number")
-                    if a not in tasks:
-                        raise ValueError(f"Station Compatibility in row {index} is not a valid task ID")
-                    compatibility = (a, task_id)
-                    if compatibility:
-                        same_station_pairs.append(compatibility)
-            except Exception as e:
-                if isinstance(e, ValueError): 
-                    raise ValueError(str(e))
-                else:
-                    raise ValueError(f"Invalid Station Compatibility in row {index}") 
 
-        precedence_relations = default_precedence_relations(tasks)
+        precedence_relations = get_pairs(records, tasks, 2, "Precedence")
+        same_station_pairs = get_pairs(records, tasks, 3, "Same Station Pair")
+        incompatible = get_pairs(records, tasks, 4, "Incompatible Task")
 
         logging.debug(f"Tasks: {tasks}")
         logging.debug(f"Task Time Dictionary: {task_time_dict}")
@@ -122,7 +102,8 @@ def process_input_data(data):
             "process_specific_costs": process_specific_costs,
             "task_descriptions": task_descriptions,
             "station_type_compatibility": station_type_compatibility,
-            "precedence_relations": precedence_relations
+            "precedence_relations": precedence_relations,
+            "incompatible_tasks": incompatible
         }
     
     except Exception as e:
@@ -130,6 +111,33 @@ def process_input_data(data):
             raise ValueError(str(e))
         else:
             raise ValueError("Reason unknown") 
+
+def get_pairs(records, tasks, column, type):
+    pairs = []
+    for index, row in enumerate(records, start=2):
+        task_id = int(row[0])
+        a = row[column]
+
+        if not a:
+            continue
+
+        try:
+            try:
+                a = int(a)
+            except ValueError:
+                raise ValueError(f"{type} in row {index} is not a number")
+            if a not in tasks:
+                raise ValueError(f"{type} in row {index} is not a valid task ID")
+            if a:
+                pairs.append((a, task_id))
+ 
+        except Exception as e:
+            if isinstance(e, ValueError): 
+                raise ValueError(str(e))
+            else:
+                raise ValueError(f"Invalid {type} in row {index}")
+            
+    return pairs
 
 def process_hyperparameters(data):
     cycle_time = data["cycle_time_requirement"]
@@ -179,13 +187,10 @@ def process_hyperparameters(data):
 
     station_types = data.get("station_types", list(station_costs.keys()))
 
-    incompatible_tasks = data.get("incompatible_tasks", [])
-
     return {
         "cycle_time": cycle_time,
         "station_costs": station_costs,
         "station_types": station_types,
-        "incompatible_tasks": incompatible_tasks,
         "labor_costs": labor_costs,
         "working_hours": working_hours,
         "maintenance_costs": maintenance_costs,
@@ -200,3 +205,44 @@ def default_precedence_relations(tasks):
     """
     # Generate precedence relations for consecutive tasks with relevance 1
     return [(tasks[i], tasks[i+1]) for i in range(len(tasks) - 1)]
+
+def process_current_status_data(data):
+    records = [row for row in data[1:] if any(cell is not None and str(cell).strip() for cell in row)]
+
+    station_results = {}
+    task_specific_costs = {}
+    task_time_dict = {}
+    task_descritptions = {}
+
+    station = 1
+    station_type = "manual"
+    parallel_stations = 1
+
+    for index, row in enumerate(records, start=2):
+        if row[3] is not None:
+            station = int(row[3])
+            station_type = row[4]
+            parallel_stations = int(row[5])
+
+        try:
+            task_id = int(row[0])
+        except ValueError:
+            raise ValueError(f"Task ID in row {index} is not a number")
+        
+        task_descritptions[task_id] = row[1] if row[1] is not None else "Unknown"
+
+        task_time_dict[(task_id, station_type)] = int(row[2])
+        
+        if station not in station_results:
+            station_results[station] = {
+                "station_type": station_type,
+                "assigned_tasks": [task_id],
+                "parallel_stations": parallel_stations
+            }
+        else:
+            # Falls station_results[j] schon existiert, füge die Aufgabe hinzu
+            station_results[station]["assigned_tasks"].append(task_id)
+
+        task_specific_costs[task_id] = int(row[6])
+
+    return station_results, task_specific_costs, task_time_dict, task_descritptions

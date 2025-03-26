@@ -25,10 +25,16 @@ optimization_data = {
     "task_information": None,
     "hyperparameters": None
 }
+current_status_station_results = None
+task_specific_costs = None
 task_descriptions = None
 results = None
 task_time_dict = None
+cycle_time = None
 optimization_status = {"status": "Optimization not started"}
+
+current_status_task_time_dict = None
+current_status_task_descriptions = None
 
 class InputData(BaseModel):
     data: List
@@ -39,6 +45,18 @@ class Hyperparameters(BaseModel):
 @app.get("/")
 async def serve_index():
     return FileResponse(os.path.join(FRONTEND_DIR, "input", "index.html"))
+
+@app.post("/upload-current-status-data")
+async def upload_data(payload: InputData):
+    """Processes the Excel-file"""
+    global current_status_station_results, task_specific_costs, current_status_task_time_dict, current_status_task_descriptions
+    received_data = payload.data
+    try:
+        current_status_station_results, task_specific_costs, current_status_task_time_dict, current_status_task_descriptions = dp.process_current_status_data(received_data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error processing Status-file: {str(e)}")
+
+    return JSONResponse(content={"message": "Excel Upload successfull"}, status_code=200)
 
 @app.post("/upload-data")
 async def upload_data(payload: InputData):
@@ -104,6 +122,10 @@ async def get_station_results(from_pickle=False, pickle_path="results.pkl"):
         local_results = results
 
     all_station_results = {}
+
+    if current_status_station_results:
+        all_station_results["Current_Status"] = current_status_station_results
+
     for objective, result in local_results.items():
         station_results = result.station_results
         all_station_results[objective] = station_results
@@ -120,11 +142,62 @@ async def get_table_data(from_pickle=False, pickle_path="results.pkl"):
         local_results = results
 
     data = {}
+    if current_status_station_results:
+        data["Current_Status"] = get_table_data_from_current_status(current_status_station_results)
+
     for objective, result in local_results.items():
         table_data = result.table_data
         data[objective] = table_data
 
     return JSONResponse(content=data)
+
+def get_table_data_from_current_status(current_status_station_results):
+    number_of_stations = len(current_status_station_results)
+    total_number_of_stations = 0
+    for station in current_status_station_results.values():
+        total_number_of_stations += int(station["parallel_stations"])
+
+    fix_costs = calculate_fix_costs(current_status_station_results)
+    labor_costs = calculate_labor_costs(current_status_station_results)
+    maintenance_costs = calculate_maintenance_costs(current_status_station_results)
+    total_costs = fix_costs + labor_costs + maintenance_costs
+
+    return {
+        'number_of_stations': number_of_stations,
+        'total_number_of_stations': total_number_of_stations,
+        'cost_of_ownership': total_costs,
+        'fix_costs': fix_costs,
+        'labor_costs': labor_costs,
+    }
+
+def calculate_labor_costs(current_status_station_results):
+    n  = 0
+    for station in current_status_station_results.values():
+        if station["station_type"] == "manual":
+            n += int(station["parallel_stations"])
+    return n * optimization_data["hyperparameters"]["labor_costs"] * optimization_data["hyperparameters"]["working_hours"] * optimization_data["hyperparameters"]["horizon"] * 250
+
+def calculate_fix_costs(current_status_station_results):
+    costs = 0
+    # Fix costs for opening the stations
+    for station in current_status_station_results.values():
+        costs += (optimization_data["hyperparameters"]["station_costs"][station["station_type"]] * int(station["parallel_stations"]))
+
+    # Task specific costs
+    for station in current_status_station_results.values():
+        for task in station["assigned_tasks"]:
+            costs += (task_specific_costs[task] * int(station["parallel_stations"]))
+    return costs
+
+def calculate_maintenance_costs(current_status_station_results):
+    """Calculates the maintenance costs per year"""
+    costs = 0
+    for station in current_status_station_results.values():
+        if station["station_type"] == "automatic":
+            costs += (optimization_data["hyperparameters"]["station_costs"]["automatic"] * int(station["parallel_stations"]))
+            for task in station["assigned_tasks"]:
+                costs += (task_specific_costs[task] * int(station["parallel_stations"]))
+    return costs * (1 + optimization_data["hyperparameters"]["maintenance_costs"])
 
 @app.get("/get-task-descriptions")
 async def get_task_descriptions():
@@ -138,6 +211,15 @@ async def get_task_times():
 def convert_tuple_key_to_strings(dictionary):
     converted_dict = {json.dumps(list(key), separators=(',', ':')): value for key, value in dictionary.items()}
     return converted_dict
+
+@app.get("/get-current-status-task-times")
+async def get_current_status_task_times():
+    json_data = convert_tuple_key_to_strings(current_status_task_time_dict)
+    return JSONResponse(content=json_data)
+
+@app.get("/get-current-status-task-descriptions")
+async def get_current_status_task_descriptions():
+    return JSONResponse(content=current_status_task_descriptions)
 
 @app.get("/graph/{objective}")
 def get_graph(objective: str):
@@ -156,5 +238,4 @@ def get_graph(objective: str):
 def start_server(port=8000):
     logging.getLogger("uvicorn.access").handlers = []  # Entfernt alle Handler für HTTP-Logs
     logging.getLogger("uvicorn.access").propagate = False
-    uvicorn.run("backend.api.main:app", host="127.0.0.1", port=port, log_level="info", access_log=False)
-    
+    uvicorn.run("backend.api.main:app", host="127.0.0.1", port=port, log_level="info", access_log=False)   

@@ -10,7 +10,8 @@
 
     <h1 id="title">Assembly Line Balancing Report</h1>
 
-    <div id="graphContainer" class="image-container"></div>
+    <div id="current-status-graph"></div>
+    <div id="graphContainer" class="graph-container"></div>
 
     <table class="cost-table">
         <thead>
@@ -47,8 +48,7 @@
                 <tbody id="task-info"></tbody>
             </table>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="report.js?v=${Date.now()}"></script>
 </body>
 </html>

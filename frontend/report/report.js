@@ -1,40 +1,16 @@
 document.addEventListener("DOMContentLoaded", async function () {
     const tableBody = document.querySelector(".cost-table tbody");
     try {
-        const stationResultsResponse = await fetch("/get-station-results", {
-            method: "GET",
-            mode: "cors",
-            headers: {
-                "Accept": "application/json"
-            }
-        });
+        const stationResultsResponse = await fetch("/get-station-results");
         const stationResults = await stationResultsResponse.json();
 
-        const taskDescriptionsResponse = await fetch("/get-task-descriptions", {
-            method: "GET",
-            mode: "cors",
-            headers: {
-                "Accept": "application/json"
-            }
-        });
+        const taskDescriptionsResponse = await fetch("/get-task-descriptions");
         const taskDescriptions = await taskDescriptionsResponse.json();
 
-        const tableDataResponse = await fetch("/get-table_data", {
-            method: "GET",
-            mode: "cors",  // WICHTIG für CORS
-            headers: {
-                "Accept": "application/json",  // Kein "Content-Type", um Preflight zu vermeiden
-            },
-        });
+        const tableDataResponse = await fetch("/get-table_data");
         const tableData = await tableDataResponse.json(); // JSON-Daten parsen
 
-        const taskTimesResponse = await fetch("/get-task-times", {
-            method: "GET",
-            mode: "cors",  // WICHTIG für CORS
-            headers: {
-                "Accept": "application/json",  // Kein "Content-Type", um Preflight zu vermeiden
-            },
-        });
+        const taskTimesResponse = await fetch("/get-task-times");
         const taskTimes = await taskTimesResponse.json(); // JSON-Daten parsen        
 
         const objectives = [];
@@ -61,46 +37,173 @@ document.addEventListener("DOMContentLoaded", async function () {
             tableBody.appendChild(row);
         }
 
-        loadGraphs(objectives)
+        loadGraphs(objectives, taskDescriptions, taskTimes, stationResults);
 
-        createObjectiveButtons(stationResults, taskDescriptions, taskTimes);
-        document.getElementById("download-btn").addEventListener("click", function () {
-            createPDF(objectives, tableData);
-        });        
+        createObjectiveButtons(stationResults, taskDescriptions, taskTimes);       
 
     } catch (error) {
         console.error("Fehler beim Erstellen der Datei", error);
     }
 });
 
-function loadGraphs(objectives) {
+async function loadGraphs(objectives, taskDescriptions, taskTimes, stationResults) {
     const container = document.getElementById("graphContainer");
     container.innerHTML = ""; // Alte Bilder entfernen
 
-    objectives.forEach(async (objective) => {
-        try {
-            let response = await fetch(`/graph/${objective}?t=${Date.now()}`, {
-                method: "GET",
-                headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
-            });
+    for (const objective of objectives) {
+        let graphDiv = document.createElement("div");
+        graphDiv.classList.add("graph");
+        container.appendChild(graphDiv);
+        stations = stationResults[objective];
 
-            if (!response.ok) throw new Error(`Fehler beim Laden: ${response.status}`);
+        if (objective === "Current_Status") {
+            const currentStatusTaskTimesResponse = await fetch("/get-current-status-task-times");
+            const currentStatusTaskTimes = await currentStatusTaskTimesResponse.json();
+            const currentStatusTaskDescriptionsResponse = await fetch("/get-current-status-task-descriptions");
+            const currentStatusTaskDescriptions = await currentStatusTaskDescriptionsResponse.json();
 
-            let blob = await response.blob();
-            let imgUrl = URL.createObjectURL(blob);
+            drawGraph(graphDiv, stations, currentStatusTaskTimes, currentStatusTaskDescriptions, objective);
 
-            let img = document.createElement("img");
-            img.src = imgUrl;
-            img.alt = `Graph for ${objective}`;
-            img.style.width = "100%";
-            container.appendChild(img);
-        } catch (error) {
-            console.error("Fehler beim Laden des Graphs:", error);
-        }
-    });
+        } else drawGraph(graphDiv, stations, taskTimes, taskDescriptions, objective);
+    }
 }
 
-function createObjectiveButtons(stationResults, taskDescriptions, taskTimes) {
+function drawGraph(graphDiv, stations, taskTimes, taskDescriptions, objective) {
+    const width = graphDiv.clientWidth;
+    const height = graphDiv.clientHeight;
+    const margin = { top: 40, right: 30, bottom: 40, left: 50 };
+
+    const tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+    const svg = d3.select(graphDiv)
+        .append("svg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("preserveAspectRatio", "xMidYMid meet");
+
+    const data = [];
+    const xLabels = []; // x-Achse bekommt parallele Stationen als Label
+    // Flaches data-Array im D3-Format erstellen
+    for (let stationId of Object.keys(stations)) {
+        const stationInfo = stations[stationId];
+        for (let task of stationInfo.assigned_tasks) {
+            const key = JSON.stringify([task, stationInfo.station_type]);
+            const taskTime = Math.floor((taskTimes[key] || 0) / (stationInfo.parallel_stations || 1));
+            data.push({
+                station: stationId,
+                station_type: stationInfo.station_type,
+                task: task,
+                actualTime: taskTimes[key] || 0,
+                time: taskTime,
+                description: taskDescriptions[task] || "Unknown"
+            });
+        }
+        xLabels.push(stationInfo.parallel_stations);
+    }
+
+    const grouped = d3.group(data, d => d.station);
+    const stationId = Array.from(grouped.keys());
+
+    const xScale = d3.scaleBand()
+        .domain(stationId)
+        .range([margin.left, width - margin.right])
+        .padding(0.3);
+
+    const yScale = d3.scaleLinear()
+        .domain([0, 50])
+        .range([height - margin.bottom, margin.top]);
+
+    const colorScale = d3.scaleOrdinal()
+        .domain(['manual', 'automatic'])
+        .range(['#FF7F50', '#0E9682']);
+    
+    svg.append("g")
+        .attr("transform", `translate(0, ${height - margin.bottom})`)
+        .call(d3.axisBottom(xScale).tickFormat((d, i) => xLabels[i])); 
+
+    // Beschriftung der x-Achse
+    svg.append("text")
+        .attr("x", width / 2)  // Zentriert auf der X-Achse
+        .attr("y", height - margin.bottom + 30)  // Direkt unter der X-Achse
+        .attr("text-anchor", "middle")  // Horizontale Ausrichtung
+        .style("font-size", "14px")  // Schriftgröße
+        .style("font-weight", "bold")  // Fett
+        .text("Number of Workers/Robots");  // Text der X-Achse
+
+    svg.append("g")
+        .attr("transform", `translate(${margin.left}, 0)`)
+        .call(d3.axisLeft(yScale));
+
+    const stationGroups = svg.selectAll(".station-group")
+        .data(Array.from(grouped))
+        .enter()
+        .append("g")
+        .attr("class", "station-group")
+        .attr("transform", ([station]) => `translate(${xScale(station)}, 0)`);
+    
+    stationGroups.each(function([station, tasks]) {
+        let yOffset = 0;
+        const g = d3.select(this);
+        const stationType = tasks[0].station_type;
+        const fillColor = colorScale(stationType);
+    
+        for (let task of tasks) {
+            const yTop = yScale(yOffset + task.time);
+            const rectHeight = yScale(0) - yScale(task.time);
+    
+            g.append("rect")
+                .attr("x", 0)
+                .attr("y", yTop)
+                .attr("width", xScale.bandwidth())
+                .attr("height", rectHeight)
+                .attr("fill", fillColor)
+                .attr("stroke", "black")
+                .on("mouseover", function(event) {
+                    const current = d3.select(this);
+                    const original = current.attr("fill");
+                    current.attr("data-original-fill", original); // speichern
+                    current.attr("fill", d3.color(original).darker(0.5)); // abdunkeln
+                
+                    tooltip
+                        .style("opacity", 1)
+                        .html(`<strong>Task ${task.task}</strong><br/>Task Time: ${task.actualTime} seconds<br/>${task.description}`);
+                })
+                .on("mousemove", function(event) {
+                    tooltip
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 20) + "px");
+                })
+                .on("mouseout", function() {
+                    const current = d3.select(this);
+                    current.attr("fill", current.attr("data-original-fill")); // Farbe zurücksetzen
+                    tooltip.style("opacity", 0);
+                });
+    
+            yOffset += task.time;
+        }
+    });
+
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", margin.top / 2)
+        .attr("text-anchor", "middle")
+        .text(formatTitle(objective))
+        .style("font-size", "22px")
+        .style("font-weight", "bold");
+
+    const yLinePosition = yScale(50);  // Berechnung der Y-Position bei 50 Sekunden
+    svg.append("line")
+        .attr("x1", margin.left)  // Startpunkt der Linie (links)
+        .attr("x2", width - margin.right)  // Endpunkt der Linie (rechts)
+        .attr("y1", yLinePosition)  // Y-Position bei 50 Sekunden
+        .attr("y2", yLinePosition)  // Y-Position bleibt gleich, da es eine horizontale Linie ist
+        .attr("stroke", "red")  // Farbe der Linie (z. B. rot)
+        .attr("stroke-dasharray", "5, 5")  // Das macht die Linie gestrichelt
+        .attr("stroke-width", 2);  // Strichbreite der Linie
+}
+
+async function createObjectiveButtons(stationResults, taskDescriptions, taskTimes) {
     const buttonContainer = document.querySelector(".button-container");
     
     // Falls der Container bereits Buttons enthält, erst leeren
@@ -114,18 +217,34 @@ function createObjectiveButtons(stationResults, taskDescriptions, taskTimes) {
         button.id = key; // Key als ID setzen
         button.textContent = formatTitle(key);
 
-        button.addEventListener("click", function () {
-            createLayout(stationResults, this.id, taskDescriptions, taskTimes);
-        });
+        if (key === "Current_Status") {
+            const currentStatusTaskTimesResponse = await fetch("/get-current-status-task-times");
+            const currentStatusTaskTimes = await currentStatusTaskTimesResponse.json();
+            const currentStatusTaskDescriptionsResponse = await fetch("/get-current-status-task-descriptions");
+            const currentStatusTaskDescriptions = await currentStatusTaskDescriptionsResponse.json();
 
-        if (!firstButton) firstButton = button;
+            button.addEventListener("click", function () {
+                createLayout(stationResults, this.id, currentStatusTaskDescriptions, currentStatusTaskTimes);
+            }); 
+            buttonContainer.appendChild(button);
 
-        buttonContainer.appendChild(button);
-    }
+            if (!firstButton) {
+                firstButton = button;
+                firstButton.classList.add("selected");
+                createLayout(stationResults, firstButton.id, currentStatusTaskDescriptions, currentStatusTaskTimes);
+            }
 
-    if (firstButton) {
-        firstButton.classList.add("selected"); // Button optisch hervorheben
-        createLayout(stationResults, firstButton.id, taskDescriptions, taskTimes); // Layout direkt laden
+        } else {
+            button.addEventListener("click", function () {
+                createLayout(stationResults, this.id, taskDescriptions, taskTimes);
+            }); 
+            buttonContainer.appendChild(button);
+            if (!firstButton) {
+                firstButton = button;
+                firstButton.classList.add("selected");
+                createLayout(stationResults, firstButton.id, taskDescriptions, taskTimes);
+            }
+        }
     }
 }
 
@@ -227,9 +346,6 @@ function showTaskDescription(stationId, stations, parallel_stations, taskDescrip
     let buttons = document.querySelectorAll('.station');
     buttons.forEach(button => button.classList.remove('selected'));
 
-    console.log(taskTimes);
-    console.log(stationType);
-
     let selectedButton = document.getElementById(stationId);
     selectedButton.classList.add('selected');
 
@@ -270,100 +386,5 @@ function showTaskDescription(stationId, stations, parallel_stations, taskDescrip
         row.appendChild(descriptionCell);
         row.appendChild(taskTimesCell);
         taskTableBody.appendChild(row);
-    });
-}
-
-async function createPDF(objectives, tableData) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    // **Überschrift zentrieren**
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    const pageWidth = doc.internal.pageSize.width;
-    const text = "Assembly Line Balancing Report";
-    const textWidth = doc.getTextWidth(text);
-    doc.text(text, (pageWidth - textWidth) / 2, 15);
-
-    // **Tabelle hinzufügen**
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
-    doc.autoTable({
-        startY: 25,
-        head: [["Objective", "Number of Processes", "Number of Stations", "Total Cost of Ownership", "Initial Investment Cost", "Labor Costs"]],
-        body: objectives.map(obj => [
-            formatTitle(obj),
-            tableData[obj]?.number_of_stations ?? 0,
-            tableData[obj]?.total_number_of_stations ?? 0,
-            `${parseInt(tableData[obj]?.cost_of_ownership ?? 0).toLocaleString("en-US")}¥`,
-            `${parseInt(tableData[obj]?.fix_costs ?? 0).toLocaleString("en-US")}¥`,
-            `${parseInt(tableData[obj]?.labor_costs ?? 0).toLocaleString("en-US")}¥`
-        ]),
-        headStyles: { fillColor: [14, 150, 130], textColor: [255, 255, 255], fontStyle: "bold" },
-        alternateRowStyles: { fillColor: [240, 240, 240] }
-    });
-
-    let startY = doc.autoTable.previous.finalY + 10; // Position unter der Tabelle
-
-    // **Bilder laden und Höhe automatisch berechnen**
-    let imageBlobs = await Promise.all(objectives.map(async (objective) => {
-        try {
-            let response = await fetch(`/graph/${objective}?t=${Date.now()}`, {
-                method: "GET",
-                headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
-            });
-
-            if (!response.ok) throw new Error(`Fehler beim Laden: ${response.status}`);
-
-            let blob = await response.blob();
-            return { blob, objective };
-        } catch (error) {
-            console.error("Fehler beim Laden des Graphs:", error);
-            return null;
-        }
-    }));
-
-    imageBlobs = imageBlobs.filter(img => img !== null); // Entferne fehlerhafte Bilder
-
-    const maxWidth = 100; // Maximale Breite in mm
-    const margin = 5; // Abstand zwischen den Bildern
-    const pageMargin = 10; // Seitenrand
-
-    let y = startY;
-    let x = pageMargin;
-
-    for (let i = 0; i < imageBlobs.length; i++) {
-        const img = new Image();
-        img.src = URL.createObjectURL(imageBlobs[i].blob);
-
-        await new Promise((resolve) => {
-            img.onload = function () {
-                const aspectRatio = img.naturalHeight / img.naturalWidth; // Höhe/Breite-Verhältnis
-                const imgHeight = maxWidth * aspectRatio; // Automatisch berechnete Höhe
-
-                if (i % 2 === 1) {
-                    x = pageWidth - pageMargin - maxWidth; // Rechtsbündiges Bild
-                } else {
-                    x = pageMargin; // Linksbündiges Bild
-                    if (i > 0) y += imgHeight + margin; // Neue Zeile nach jedem zweiten Bild
-                }
-
-                doc.addImage(img, "PNG", x, y, maxWidth, imgHeight);
-                resolve();
-            };
-        });
-    }
-
-    doc.save("Assembly_Line_Balancing_Report.pdf");
-}
-
-
-// **Hilfsfunktion: Blob in Base64 konvertieren für jsPDF**
-async function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
     });
 }

@@ -235,3 +235,29 @@ button:hover {
 .station-info-table td {
     background-color: #f9f9f9;
 }
+
+.tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 6px 10px;
+    font-size: 14px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.graph-container {
+    display: flex;
+    flex-direction: column; /* untereinander */
+    gap: 20px;               /* Abstand zwischen Graphen */
+    align-items: center;     /* zentriert horizontal */
+    padding: 20px;
+}
+
+.graph {
+    width: 100%;
+    max-width: 800px;
+    aspect-ratio: 2 / 1;  /* oder feste Höhe, z. B. height: 400px; */
+}

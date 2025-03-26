@@ -19,7 +19,7 @@ def minimize_costs(model):
                                     for p in model.PARALLELS)
                                 for j in model.STATIONS)
 
-    total_automatic_costs = fixed_automatic_costs * 1.05
+    total_automatic_costs = fixed_automatic_costs * (1 + model.maintenance_costs)
 
     fixed_manual_costs = sum(sum(model.C["manual"] * model.w[j, "manual", p] * p for p in model.PARALLELS) for j in model.STATIONS)
     task_specific_manual_costs = sum(model.q[i, "manual"] * model.x[i, j, "manual", p] * p for i in model.TASKS for p in model.PARALLELS for j in model.STATIONS)
