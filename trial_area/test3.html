@@ -3,24 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Language Switch</title>
+    <title>Language Switcher</title>
     <style>
+        /* Container für die Überschrift und den Sprachumschalter */
+        #header {
+            display: flex;
+            justify-content: space-between;  /* Platziert die Überschrift links und den Sprachumschalter rechts */
+            align-items: center;  /* Zentriert beide Elemente vertikal auf gleicher Höhe */
+            width: 100%;
+            padding: 20px;
+        }
+
+        /* Styling für die Überschrift */
+        h2 {
+            margin: 0;  /* Verhindert unerwünschte Abstände */
+            font-size: 24px;
+            color: #333;
+        }
+
         /* Container für die Sprachwahl */
         .language-switch-container {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 50px;
+            gap: 10px;  /* Abstand zwischen den Sprachoptionen */
         }
 
-        /* Styling für die Spracheinstellungen */
+        /* Styling für die Sprachoptionen */
         .language-option {
-            padding: 0px 10px;
+            padding: 10px 20px;
             cursor: pointer;
             font-weight: bold;
-            margin: 0;
             border-radius: 5px;
             transition: background-color 0.3s ease;
+        }
+
+        /* Hover-Effekt */
+        .language-option:hover {
+            background-color: #f0f0f0;
         }
 
         /* Box für die ausgewählte Sprache */
@@ -28,27 +46,25 @@
             background-color: #0E9682;
             color: white;
         }
-
     </style>
 </head>
 <body>
 
-    <div class="language-switch-container">
-        <!-- EN Option -->
-        <span id="lang-en" class="language-option">EN</span>
-        <!-- CN Option -->
-        <span id="lang-cn" class="language-option">CN</span>
+    <div id="header">
+        <h2>Assembly Line Balancing - Input</h2>
+        <div class="language-switch-container">
+            <span id="lang-en" class="language-option">EN</span>
+            <span id="lang-cn" class="language-option">CN</span>
+        </div>
     </div>
 
     <script>
-        // JavaScript zum Umschalten der aktiven Sprache
         const langEn = document.getElementById("lang-en");
         const langCn = document.getElementById("lang-cn");
 
         // Standardmäßig EN als aktiv
         langEn.classList.add("active");
 
-        // Funktion zum Umschalten zwischen den Sprachen
         langEn.addEventListener("click", function() {
             langEn.classList.add("active");
             langCn.classList.remove("active");

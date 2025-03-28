@@ -8,16 +8,22 @@
 </head>
 <body>
     <div class="container">
-        <h2>Assembly Line Balancing - Input</h2>
-        <p>Choose Optimization Goals and Parameters and Upload the Excel-file</p>
+        <div id="header">
+            <h2>Assembly Line Balancing - Input</h2>
+            <div class="language-switch-container">
+                <span id="lang-en" class="language-option">EN</span>
+                <span id="lang-cn" class="language-option">CN</span>
+            </div>
+        </div>
+        <p id="tutorial">Choose Optimization Goals and Parameters and Upload the Excel-file</p>
 
         <div class="section">
-            <label>Objectives:</label>
+            <label id="checkbox-label">Objectives:</label>
             <div class="checkbox-container">
-                <label><input type="checkbox" value="Minimize_Total_Cost_of_Ownership"> Minimize Total Cost of Ownership</label>
-                <label><input type="checkbox" value="Minimize_Initial_Investment"> Minimize Initial Investment</label>
-                <label><input type="checkbox" value="Minimize_Stations"> Minimize Number of Stations</label>
-                <label><input type="checkbox" value="Maximize_Automation"> Maximize Degree of Automation</label>
+                <label id="Checkbox_Minimize_Total_Cost_of_Ownership"><input type="checkbox" value="Minimize_Total_Cost_of_Ownership"> Minimize Total Cost of Ownership</label>
+                <label id="Checkbox_Minimize_Initial_Investment"><input type="checkbox" value="Minimize_Initial_Investment"> Minimize Initial Investment</label>
+                <label id="Checkbox_Minimize_Stations"><input type="checkbox" value="Minimize_Stations"> Minimize Number of Stations</label>
+                <label id="Checkbox_Maximize_Automation"><input type="checkbox" value="Maximize_Automation"> Maximize Degree of Automation</label>
             </div>
         </div>
 
@@ -26,35 +32,35 @@
             <div class="content" id="parameter-section">
                 <div class="input-grid">
                     <div>
-                        <label for="cycle-time">Cycle Time Requierement (in Seconds):</label>
+                        <label for="cycle-time" id="cycle-time-label">Cycle Time Requierement (in Seconds):</label>
                         <input type="number" id="cycle-time" min="1" value="50">
                     </div>
                     <div>
-                        <label for="time-limit">Time Limit for Optimization (in Seconds):</label>
+                        <label for="time-limit" id="time-limit-label">Time Limit for Optimization (in Seconds):</label>
                         <input type="number" id="time-limit" min="1" value="12">
                     </div>
                     <div>
-                        <label for="manual-cost">Initial Cost for a Manual Station:</label>
+                        <label for="manual-cost" id="manual-cost-label">Initial Cost for Opening a Manual Station:</label>
                         <input type="number" id="manual-cost" min="0" value="100000">
                     </div>
                     <div>
-                        <label for="automatic-cost">Initial Cost for an Automatic Station:</label>
+                        <label for="automatic-cost" id="automatic-cost-label">Initial Cost for Opening an Automatic Station:</label>
                         <input type="number" id="automatic-cost" min="0" value="200000">
                     </div>
                     <div>
-                        <label for="labor-cost">Labor Costs per hour:</label>
+                        <label for="labor-cost" id="labor-cost-label">Labor Costs per hour:</label>
                         <input type="number" id="labor-cost" min="0" value="220">
                     </div>
                     <div>
-                        <label for="working-hours">Daily Working hours:</label>
+                        <label for="working-hours" id="working-hours-label">Daily Working hours:</label>
                         <input type="number" id="working-hours" min="1" max="24" value="8">
                     </div>
                     <div>
-                        <label for="maintenance-cost">Maintenance Cost per Robot per year (%):</label>
+                        <label for="maintenance-cost" id="maintenance-cost-label">Maintenance Cost for automated Stations (%):</label>
                         <input type="number" id="maintenance-cost" min="0" max="1" value="1.5">
                     </div>
                     <div>
-                        <label for="horizon">Planning horizon (in years):</label>
+                        <label for="horizon" id="horizon-label">Planning horizon (in years):</label>
                         <input type="number" id="horizon" min="0" value="3">
                     </div>
                 </div>
@@ -62,12 +68,12 @@
         </div>
 
         <div class="section">
-            <label for="file-upload">Upload Excel-file:</label>
+            <label for="file-upload" id="file-upload-label">Upload Task Overview Excel File:</label>
             <input type="file" id="file-upload" accept=".xls,.xlsx">
         </div>
 
         <div class="section">
-            <label for="status-upload">Upload Current Status:</label>
+            <label for="status-upload" id="status-upload-label">Upload Current Status Excel File:</label>
             <input type="file" id="status-upload" accept=".xls,.xlsx">
         </div>
 

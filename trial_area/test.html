@@ -3,91 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Mehrsprachige Website</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
-        canvas {
-            width: 800px;
-            height: 500px;
+        /* Einfaches Styling für den Sprachwechsel-Button */
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
+    <!-- Sprachwahl Button -->
+    <div class="language-switcher" onclick="switchLanguage()">Switch Language</div>
 
-    <canvas id="myChart"></canvas>
+    <!-- Der Inhalt der Seite -->
+    <div id="content">
+        <h1 id="title">Willkommen auf unserer Website!</h1>
+        <p id="description">Dies ist eine einfache mehrsprachige Seite.</p>
+    </div>
 
     <script>
-        const ctx = document.getElementById('myChart').getContext('2d');
-
-        // Einheitliche Farben für die Balken
-        const barColors = ['rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(75, 192, 192, 0.7)'];
-
-        // Beispiel-Daten
-        const data = {
-            labels: ['Kategorie A', 'Kategorie B', 'Kategorie C'],
-            datasets: [
-                {
-                    label: 'Segment 1',
-                    data: [5, 10, 7],
-                    backgroundColor: barColors[0],
-                    borderColor: 'black',
-                    borderWidth: 2,
-                    stack: 'Stack 1'
-                },
-                {
-                    label: 'Segment 2',
-                    data: [7, 8, 6],
-                    backgroundColor: barColors[0],  // Gleiche Farbe wie Segment 1
-                    borderColor: 'black',
-                    borderWidth: 2,
-                    stack: 'Stack 1'
-                },
-                {
-                    label: 'Segment 3',
-                    data: [6, 9, 8],
-                    backgroundColor: barColors[0],  // Gleiche Farbe wie Segment 1
-                    borderColor: 'black',
-                    borderWidth: 2,
-                    stack: 'Stack 1'
-                }
-            ]
+        // Die Textinhalte für verschiedene Sprachen
+        const content = {
+            de: {
+                title: "Willkommen auf unserer Website!",
+                description: "Dies ist eine einfache mehrsprachige Seite."
+            },
+            en: {
+                title: "Welcome to our website!",
+                description: "This is a simple multilingual page."
+            }
         };
 
-        // Erstelle das gestapelte Balkendiagramm
-        const myChart = new Chart(ctx, {
-            type: 'bar',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false, // Erlaubt es, die Größe unabhängig vom Seitenverhältnis zu ändern
-                plugins: {
-                    tooltip: {
-                        enabled: true,
-                        callbacks: {
-                            label: function(tooltipItem) {
-                                return `${tooltipItem.dataset.label}: ${tooltipItem.raw} Einheiten`;
-                            }
-                        }
-                    },
-                    legend: {
-                        display: false // Falls du die Legende ausblenden möchtest
-                    }
-                },
-                scales: {
-                    x: {
-                        stacked: true
-                    },
-                    y: {
-                        stacked: true,
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    </script>
+        // Die aktuelle Sprache
+        let currentLanguage = "de";
 
+        // Funktion zum Wechseln der Sprache
+        function switchLanguage() {
+            currentLanguage = currentLanguage === "de" ? "en" : "de"; // Wechselt zwischen Deutsch und Englisch
+
+            // Ändern der Inhalte basierend auf der aktuellen Sprache
+            document.getElementById("title").textContent = content[currentLanguage].title;
+            document.getElementById("description").textContent = content[currentLanguage].description;
+
+            // Optional: Ändern des Textes im Button
+            document.querySelector(".language-switcher").textContent = currentLanguage === "de" ? "Switch to English" : "Wechsel zu Deutsch";
+        }
+    </script>
 </body>
 </html>

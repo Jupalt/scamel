@@ -61,7 +61,8 @@ async def upload_data(payload: InputData):
 @app.post("/upload-data")
 async def upload_data(payload: InputData):
     """Processes the Excel-file"""
-    global task_descriptions
+    global task_descriptions, current_status_station_results
+    current_status_station_results = None
     received_data = payload.data
     try:
         optimization_data["task_information"] = dp.process_input_data(received_data)
@@ -220,6 +221,19 @@ async def get_current_status_task_times():
 @app.get("/get-current-status-task-descriptions")
 async def get_current_status_task_descriptions():
     return JSONResponse(content=current_status_task_descriptions)
+
+@app.get("/get-hyperparameters")
+async def get_hyperparameters():
+    hyperparameters = {
+        "cycle_time": optimization_data["hyperparameters"]["cycle_time"],
+        "manual_station_costs": optimization_data["hyperparameters"]["station_costs"]["manual"],
+        "automatic_station_costs": optimization_data["hyperparameters"]["station_costs"]["automatic"],
+        "labor_costs": optimization_data["hyperparameters"]["labor_costs"],
+        "working_hours": optimization_data["hyperparameters"]["working_hours"],
+        "maintenance_costs": optimization_data["hyperparameters"]["maintenance_costs"],
+        "horizon": optimization_data["hyperparameters"]["horizon"],
+    }
+    return JSONResponse(content=hyperparameters)
 
 @app.get("/graph/{objective}")
 def get_graph(objective: str):

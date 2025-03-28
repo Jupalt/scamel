@@ -5,11 +5,6 @@ let optimizationInterval = null;
 document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("toggle-button").addEventListener("click", toggleSelection);
     document.getElementById("start-button").addEventListener("click", startOptimization);
-    // document.getElementById("reset-button").addEventListener("click", resetButton);
-    // document.getElementById("confirm-reset").addEventListener("click", resetOptimization);
-    // document.getElementById("cancel-reset").addEventListener("click", () => {
-    //    document.getElementById("reset-modal").style.display = "none";
-    // });
     document.getElementById("file-upload").addEventListener("change", function (event) {
         if (event.target.files.length > 0) {
             selectedFile = event.target.files[0];
@@ -26,6 +21,24 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     document.getElementById("show-results").addEventListener("click", function () {
         window.location.href = "../report/report.html";
+    });
+    const langEn = document.getElementById("lang-en");
+    const langCn = document.getElementById("lang-cn");
+
+    // Standardmäßig EN als aktiv
+    langEn.classList.add("active");
+
+    // Funktion zum Umschalten zwischen den Sprachen
+    langEn.addEventListener("click", function() {
+        langEn.classList.add("active");
+        langCn.classList.remove("active");
+        switchLanguage("en");
+    });
+
+    langCn.addEventListener("click", function() {
+        langCn.classList.add("active");
+        langEn.classList.remove("active");
+        switchLanguage("cn");
     });
     window.addEventListener("beforeunload", function () {
         selectedFile = null;
@@ -283,49 +296,86 @@ function resetButton() {
     document.getElementById("reset-modal").style.display = "flex";
 }
 
-function resetOptimization() {
-    let startButton = document.getElementById("start-button");
-    let progressMessage = document.getElementById("progress-message");
-    let progress = document.getElementById("progress-bar");
-    let showResultsButton = document.getElementById("show-results");
-    let errorMessage = document.getElementById("error-message");
-
-    fetch("/cancel-optimization", {
-        method: "POST",
-        mode: "cors",
-        headers: {
-            "Accept": "application/json"
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error("Failed to cancel optimization");
-        }
-        return response.json();
-    })
-    .then(data => console.log("Optimization cancelled:", data))
-    .catch(error => console.error("Error:", error));
-
-    if (optimizationInterval) {
-        clearInterval(optimizationInterval);
-        optimizationInterval = null; // Intervall aufheben
+const content = {
+    en: {
+        tutorial: "Choose Optimization Goals and Parameters and Upload the Excel-file",
+        checkboxLabel: "Objectives:",
+        Checkbox_Minimize_Total_Cost_of_Ownership: " Minimize Total Cost of Ownership",
+        Checkbox_Minimize_Initial_Investment: " Minimize Initial Investment",
+        Checkbox_Minimize_Stations: " Minimize Number of Stations",
+        Checkbox_Maximize_Automation: " Maximize Degree of Automation",
+        toggleButton: "Adjust Parameters ",
+        cycleTimeInput: "Cycle Time Requirement (in Seconds):",
+        timeLimitInput: "Time Limit for Optimization (in Seconds):",
+        manualCostInput: "Initial Cost for Opening a Manual Station:",
+        automaticCostInput: "Initial Cost for Opening an Automatic Station:",
+        laborCostsInput: "Labor Costs per hour:",
+        workingHoursInput: "Daily Working hours:",
+        maintenanceCostsInput: "Maintenance Cost for automated Stations (%):",
+        horizonInput: "Planning horizon (in years):",
+        fileUploadLabel: "Upload Task Overview Excel File",
+        statusUploadLabel: "Upload Current Status Excel File",
+        startButton: "Start Optimization",
+        showResults: "Show Results",
+    },
+    cn: {
+        tutorial: "选择优化目标和参数并上传 Excel 文件",
+        checkboxLabel: "目标:",
+        Checkbox_Minimize_Total_Cost_of_Ownership: " 最小化总体拥有成本",
+        Checkbox_Minimize_Initial_Investment: " 最小化初始投资金额",
+        Checkbox_Minimize_Stations: " 最小化站点数量",
+        Checkbox_Maximize_Automation: " 最大自动化程度",
+        toggleButton: "参数调整 ",
+        cycleTimeInput: "周期时间要求（秒）：",
+        timeLimitInput: "优化时间上限（秒）：",
+        manualCostInput: "搭建人工工作站的初始成本：",
+        automaticCostInput: "搭建自动工作站的初始成本：",
+        laborCostsInput: "每小时的人工成本:",
+        workingHoursInput: "每日工作小时：",
+        maintenanceCostsInput: "自动站的维护成本（%):",
+        horizonInput: "规划期限（年）：",
+        fileUploadLabel: "上传任务概述 Excel 文件",
+        statusUploadLabel: "上传当前状态 Excel 文件",
+        startButton: "开始优化",
+        showResults: "显示结果",
     }
-    progress.style.width = "0%";
-    progress.classList.add("hidden");
-    progressMessage.classList.add("hidden");
-    showResultsButton.classList.add("hidden");
-    document.querySelectorAll("input").forEach(input => {
-        if (input.type === "number") {
-            input.value = input.defaultValue;
-        } else if (input.type === "checkbox") {
-            input.checked = input.defaultChecked;
-        }
-        else {
-            input.value = "";
-        }
-    });
-    selectedFile = null;
-    errorMessage.classList.add("hidden");
-    startButton.disabled = false;
-    document.getElementById("reset-modal").style.display = "none";
+}
+
+function switchLanguage(language) {
+    document.getElementById("tutorial").textContent = content[language].tutorial;
+
+    document.getElementById("checkbox-label").textContent = content[language].checkboxLabel;
+
+    document.getElementById("Checkbox_Minimize_Total_Cost_of_Ownership").innerHTML = `
+    <input type="checkbox" id="Checkbox_Minimize_Total_Cost_of_Ownership" value="Minimize_Total_Cost_of_Ownership">
+    ${content[language].Checkbox_Minimize_Total_Cost_of_Ownership} `;
+
+    document.getElementById("Checkbox_Minimize_Initial_Investment").innerHTML = `
+    <input type="checkbox" id="Checkbox_Minimize_Initial_Investment" value="Minimize_Total_Cost_of_Ownership">
+    ${content[language].Checkbox_Minimize_Initial_Investment} `;
+
+    document.getElementById("Checkbox_Minimize_Stations").innerHTML = `
+    <input type="checkbox" id="Checkbox_Minimize_Stations" value="Minimize_Total_Cost_of_Ownership">
+    ${content[language].Checkbox_Minimize_Stations} `;
+
+    document.getElementById("Checkbox_Maximize_Automation").innerHTML = `
+    <input type="checkbox" id="Checkbox_Maximize_Automation" value="Minimize_Total_Cost_of_Ownership">
+    ${content[language].Checkbox_Maximize_Automation} `;
+
+    document.getElementById("toggle-button").childNodes[0].textContent = content[language].toggleButton;
+
+    document.getElementById("cycle-time-label").textContent = content[language].cycleTimeInput;
+    document.getElementById("time-limit-label").textContent = content[language].timeLimitInput;
+    document.getElementById("manual-cost-label").textContent = content[language].manualCostInput;
+    document.getElementById("automatic-cost-label").textContent = content[language].automaticCostInput;
+    document.getElementById("labor-cost-label").textContent = content[language].laborCostsInput;
+    document.getElementById("working-hours-label").textContent = content[language].workingHoursInput;
+    document.getElementById("maintenance-cost-label").textContent = content[language].maintenanceCostsInput;
+    document.getElementById("horizon-label").textContent = content[language].horizonInput;
+
+    document.getElementById("file-upload-label").textContent = content[language].fileUploadLabel;
+    document.getElementById("status-upload-label").textContent = content[language].statusUploadLabel;
+
+    document.getElementById("start-button").textContent = content[language].startButton;
+    document.getElementById("show-results").textContent = content[language].showResults;
 }

@@ -8,24 +8,64 @@
 </head>
 <body>
 
-    <h1 id="title">Assembly Line Balancing Report</h1>
+    <div id="header">
+        <h1 id="title">Assembly Line Balancing Report</h1>
+        <div class="language-switch-container">
+            <span id="lang-en" class="language-option">EN</span>
+            <span id="lang-cn" class="language-option">CN</span>
+        </div>
+    </div>
 
     <div id="current-status-graph"></div>
     <div id="graphContainer" class="graph-container"></div>
 
-    <table class="cost-table">
-        <thead>
-            <tr>
-                <th>Objective</th>
-                <th>Number of Processes</th>
-                <th>Number of Stations</th>
-                <th>Total Cost of Ownership</th>
-                <th>Initial Investment Cost</th>
-                <th>Expected Labor Costs</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <div class="container">
+        <table class="cost-table">
+            <thead>
+                <tr>
+                    <th id="objective">Objective</th>
+                    <th id="number-of-processes">Number of Processes</th>
+                    <th id="number-of-stations">Number of Stations</th>
+                    <th id="total-cost-of-ownership">Total Cost of Ownership</th>
+                    <th id="initial-investment">Initial Investment Cost</th>
+                    <th id="expected-labor-costs">Expected Labor Costs</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <table class="parameter-table" id="parameter-table">
+            <tbody>
+                <tr>
+                    <td id="param-cycle-time-label"><strong>Cycle Time Requirement</strong></td>
+                    <td id="param-cycle-time-value"></td>
+                </tr>
+                <tr>
+                    <td id="param-manual-cost-label"><strong>Initial Cost for Opening a Manual Station</strong></td>
+                    <td id="param-manual-cost-value"></td>
+                </tr>
+                <tr>
+                    <td id="param-auto-cost-label"><strong>Initial Cost for Opening an Automatic Station</strong></td>
+                    <td id="param-auto-cost-value"></td>
+                </tr>
+                <tr>
+                    <td id="param-labor-label"><strong>Labor Costs per hour</strong></td>
+                    <td id="param-labor-value"></td>
+                </tr>
+                <tr>
+                    <td id="param-working-label"><strong>Working hours per day</strong></td>
+                    <td id="param-working-value"></td>
+                </tr>
+                <tr>
+                    <td id="param-maintenance-label"><strong>Maintenance Costs for automated Stations per year</strong></td>
+                    <td id="param-maintenance-value"></td>
+                </tr>
+                <tr>
+                    <td id="param-horizon-label"><strong>Project horizon</strong></td>
+                    <td id="param-horizon-value"></td>
+                </tr>
+            </tbody>
+        </table>     
+    </div>
 
     <div class="button-container"></div>
 
@@ -40,9 +80,9 @@
             <table class="station-info-table">
                 <thead>
                     <tr>
-                        <th>Task</th>
-                        <th>Description</th>
-                        <th>Task Time</th>
+                        <th id="station-info-task">Task</th>
+                        <th id="station-info-description">Description</th>
+                        <th id="station-info-task-time">Task Time</th>
                     </tr>
                 </thead>
                 <tbody id="task-info"></tbody>

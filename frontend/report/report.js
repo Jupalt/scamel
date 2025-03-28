@@ -1,3 +1,5 @@
+let globalLanguage = "en";
+
 document.addEventListener("DOMContentLoaded", async function () {
     const tableBody = document.querySelector(".cost-table tbody");
     try {
@@ -11,7 +13,11 @@ document.addEventListener("DOMContentLoaded", async function () {
         const tableData = await tableDataResponse.json(); // JSON-Daten parsen
 
         const taskTimesResponse = await fetch("/get-task-times");
-        const taskTimes = await taskTimesResponse.json(); // JSON-Daten parsen        
+        const taskTimes = await taskTimesResponse.json();
+
+        const hyperparametersResponse = await fetch("/get-hyperparameters");
+        const hyperparameters = await hyperparametersResponse.json();
+        cycleTime = hyperparameters["cycle_time"];
 
         const objectives = [];
         for (const [objective, values] of Object.entries(tableData)) {
@@ -26,7 +32,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
             const row = document.createElement("tr");
             row.innerHTML = `
-                <td><strong>${formatTitle(objective)}<strong></td>
+                <td data-objective="${objective}"><strong>${formatTitle(objective)}</strong></td>
                 <td>${numberOfStations}</td>
                 <td>${totalNumberOfStations}</td>
                 <td>${parseInt(costOfOwnership).toLocaleString("en-US")}¥</td>
@@ -36,8 +42,30 @@ document.addEventListener("DOMContentLoaded", async function () {
 
             tableBody.appendChild(row);
         }
+        const langEn = document.getElementById("lang-en");
+        const langCn = document.getElementById("lang-cn");
+    
+        // Standardmäßig EN als aktiv
+        langEn.classList.add("active");
+    
+        // Funktion zum Umschalten zwischen den Sprachen
+        langEn.addEventListener("click", function() {
+            langEn.classList.add("active");
+            langCn.classList.remove("active");
+            globalLanguage = "en";
+            switchLanguage("en");
+        });
+    
+        langCn.addEventListener("click", function() {
+            langCn.classList.add("active");
+            langEn.classList.remove("active");
+            globalLanguage = "cn";
+            switchLanguage("cn");
+        });
 
-        loadGraphs(objectives, taskDescriptions, taskTimes, stationResults);
+        createParameterTable(hyperparameters);
+
+        loadGraphs(objectives, taskDescriptions, taskTimes, stationResults, cycleTime);
 
         createObjectiveButtons(stationResults, taskDescriptions, taskTimes);       
 
@@ -46,29 +74,60 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 });
 
-async function loadGraphs(objectives, taskDescriptions, taskTimes, stationResults) {
+async function createParameterTable(hyperparameters) {
+    document.getElementById("param-cycle-time-value").textContent = `${hyperparameters["cycle_time"]} seconds`;
+    document.getElementById("param-manual-cost-value").textContent = `${parseInt(hyperparameters["manual_station_costs"]).toLocaleString("en-US")}¥`;
+    document.getElementById("param-auto-cost-value").textContent = `${parseInt(hyperparameters["automatic_station_costs"]).toLocaleString("en-US")}¥`;
+    document.getElementById("param-labor-value").textContent = `${parseInt(hyperparameters["labor_costs"]).toLocaleString("en-US")}¥`;
+    document.getElementById("param-working-value").textContent = `${hyperparameters["working_hours"]} hours`;
+    document.getElementById("param-maintenance-value").textContent = `${hyperparameters["maintenance_costs"] * 100}%`;
+    document.getElementById("param-horizon-value").textContent = `${hyperparameters["horizon"]} years`;
+  }
+  
+
+async function loadGraphs(objectives, taskDescriptions, taskTimes, stationResults, cycleTime) {
+    const statusGraph = document.getElementById("current-status-graph");
+    statusGraph.innerHTML = "";
     const container = document.getElementById("graphContainer");
     container.innerHTML = ""; // Alte Bilder entfernen
 
-    for (const objective of objectives) {
-        let graphDiv = document.createElement("div");
-        graphDiv.classList.add("graph");
-        container.appendChild(graphDiv);
-        stations = stationResults[objective];
+    let graphCount = objectives.length;
+    
+    if (graphCount === 1) {
+        container.classList.add("single-graph");
+    } else if (graphCount === 2) {
+        container.classList.add("two-graphs");
+    } else if (graphCount === 3) {
+        container.classList.add("three-graphs");
+    } else if (graphCount === 4) {
+        container.classList.add("four-graphs");
+    }
 
+    for (const objective of objectives) {
         if (objective === "Current_Status") {
+            let graphDiv = document.createElement("div");
+            graphDiv.classList.add("graph");
+            statusGraph.appendChild(graphDiv);
+            stations = stationResults[objective];
+
             const currentStatusTaskTimesResponse = await fetch("/get-current-status-task-times");
             const currentStatusTaskTimes = await currentStatusTaskTimesResponse.json();
             const currentStatusTaskDescriptionsResponse = await fetch("/get-current-status-task-descriptions");
             const currentStatusTaskDescriptions = await currentStatusTaskDescriptionsResponse.json();
 
-            drawGraph(graphDiv, stations, currentStatusTaskTimes, currentStatusTaskDescriptions, objective);
+            drawGraph(graphDiv, stations, currentStatusTaskTimes, currentStatusTaskDescriptions, objective, cycleTime);
 
-        } else drawGraph(graphDiv, stations, taskTimes, taskDescriptions, objective);
+        } else {
+            let graphDiv = document.createElement("div");
+            graphDiv.classList.add("graph");
+            container.appendChild(graphDiv);
+            stations = stationResults[objective];
+            drawGraph(graphDiv, stations, taskTimes, taskDescriptions, objective, cycleTime);
+        }
     }
 }
 
-function drawGraph(graphDiv, stations, taskTimes, taskDescriptions, objective) {
+function drawGraph(graphDiv, stations, taskTimes, taskDescriptions, objective, cycleTime) {
     const width = graphDiv.clientWidth;
     const height = graphDiv.clientHeight;
     const margin = { top: 40, right: 30, bottom: 40, left: 50 };
@@ -111,7 +170,7 @@ function drawGraph(graphDiv, stations, taskTimes, taskDescriptions, objective) {
         .padding(0.3);
 
     const yScale = d3.scaleLinear()
-        .domain([0, 50])
+        .domain([0, cycleTime])
         .range([height - margin.bottom, margin.top]);
 
     const colorScale = d3.scaleOrdinal()
@@ -124,6 +183,7 @@ function drawGraph(graphDiv, stations, taskTimes, taskDescriptions, objective) {
 
     // Beschriftung der x-Achse
     svg.append("text")
+        .attr("id", "x-axis-label")
         .attr("x", width / 2)  // Zentriert auf der X-Achse
         .attr("y", height - margin.bottom + 30)  // Direkt unter der X-Achse
         .attr("text-anchor", "middle")  // Horizontale Ausrichtung
@@ -167,7 +227,12 @@ function drawGraph(graphDiv, stations, taskTimes, taskDescriptions, objective) {
                 
                     tooltip
                         .style("opacity", 1)
-                        .html(`<strong>Task ${task.task}</strong><br/>Task Time: ${task.actualTime} seconds<br/>${task.description}`);
+                        .html(`
+                            <strong>${content[globalLanguage].tooltipTask} ${task.task}</strong><br/>
+                            ${content[globalLanguage].tooltipTaskTime}: ${task.actualTime} ${content[globalLanguage].tooltipSeconds}<br/>
+                            ${task.description}
+                          `);
+                        
                 })
                 .on("mousemove", function(event) {
                     tooltip
@@ -192,7 +257,7 @@ function drawGraph(graphDiv, stations, taskTimes, taskDescriptions, objective) {
         .style("font-size", "22px")
         .style("font-weight", "bold");
 
-    const yLinePosition = yScale(50);  // Berechnung der Y-Position bei 50 Sekunden
+    const yLinePosition = yScale(cycleTime);  // Berechnung der Y-Position bei 50 Sekunden
     svg.append("line")
         .attr("x1", margin.left)  // Startpunkt der Linie (links)
         .attr("x2", width - margin.right)  // Endpunkt der Linie (rechts)
@@ -215,6 +280,7 @@ async function createObjectiveButtons(stationResults, taskDescriptions, taskTime
         const button = document.createElement("button");
         button.classList.add("objective-button");
         button.id = key; // Key als ID setzen
+        button.setAttribute("data-objective", key);
         button.textContent = formatTitle(key);
 
         if (key === "Current_Status") {
@@ -354,7 +420,7 @@ function showTaskDescription(stationId, stations, parallel_stations, taskDescrip
     if (stationType === 'manual') {
         document.getElementById('parallel-stations').innerText = `Number of Workers: ${parallel_stations}`;
     } else if (stationType === 'automatic') {
-        document.getElementById('parallel-stations').innerText = `Number of Robots: ${parallel_stations}`;
+        document.getElementById('parallel-stations').innerText = `${content[globalLanguage].numberOfRobots}: ${parallel_stations}`;
     }
 
     const assignedTasks = stations[stationId].assigned_tasks;
@@ -387,4 +453,104 @@ function showTaskDescription(stationId, stations, parallel_stations, taskDescrip
         row.appendChild(taskTimesCell);
         taskTableBody.appendChild(row);
     });
+}
+
+content = {
+    en: {
+        objective: "Objective",
+        numberOfProcesses: "Number of Processes",
+        numberOfStations: "Number of Stations",
+        totalCostOfOwnership: "Total Cost of Ownership",
+        initialInvestment: "Initial Investment",
+        expectedLaborCosts: "Expected Labor Costs",
+        layoutTitle: "Potential Layout",
+        stationInfoTask: "Task",
+        stationInfoDescription: "Description",
+        stationInfoTaskTime: "Task Time",
+        tooltipTask: "Task",
+        tooltipTaskTime: "Task Time",
+        tooltipSeconds: "seconds",
+        numberOfRobots: "Number of Robots",
+        cycleTime: "Cycle Time Requirement",
+        manualCost: "Initial Cost for Opening a Manual Station",
+        autoCost: "Initial Cost for Opening an Automatic Station",
+        labor: "Labor Costs per hour",
+        workingHours: "Working hours per day",
+        maintenance: "Maintenance Costs for automated Stations per year",
+        horizon: "Project horizon",
+        xAxisLabel: "Number of Workers/Robots",
+        objectives: {
+            Minimize_Total_Cost_of_Ownership: "Minimize Total Cost of Ownership",
+            Minimize_Initial_Investment: "Minimize Initial Investment",
+            Minimize_Number_of_Stations: "Minimize Number of Stations",
+            Maximize_Degree_of_Automation: "Maximize Degree of Automation"
+        }
+    },
+
+    cn: {
+        objective: "目标",
+        numberOfProcesses: "进程数量",
+        numberOfStations: "站点数量",
+        totalCostOfOwnership: "总拥有成本",
+        initialInvestment: "初始投资",
+        expectedLaborCosts: "预计人工成本",
+        layoutTitle: "可能的布局",
+        stationInfoTask: "任务",
+        stationInfoDescription: "说明",
+        stationInfoTaskTime: "任务时间",
+        tooltipTask: "任务",
+        tooltipTaskTime: "任务时间",
+        tooltipSeconds: "秒",
+        numberOfRobots: "机器人数量",
+        cycleTime: "周期时间要求",
+        manualCost: "人工工位的初始成本",
+        autoCost: "自动工位的初始成本",
+        labor: "每小时人工成本",
+        workingHours: "每日工作时长",
+        maintenance: "自动工位的年度维护成本",
+        horizon: "项目周期",
+        xAxisLabel: "工人/机器人数量",
+        objectives: {
+            Minimize_Total_Cost_of_Ownership: "最小化总体拥有成本",
+            Minimize_Initial_Investment: "最小化初始投资金额",
+            Minimize_Number_of_Stations: "最小化站点数量",
+            Maximize_Degree_of_Automation: "最大自动化程度"
+        }
+    }
+}
+
+function switchLanguage(language){
+    document.getElementById("objective").textContent = content[language].objective;
+    document.getElementById("number-of-processes").textContent = content[language].numberOfProcesses;
+    document.getElementById("number-of-stations").textContent = content[language].numberOfStations;
+    document.getElementById("total-cost-of-ownership").textContent = content[language].totalCostOfOwnership;
+    document.getElementById("initial-investment").textContent = content[language].initialInvestment;
+    document.getElementById("expected-labor-costs").textContent = content[language].expectedLaborCosts;
+
+    document.getElementById("layout-title").textContent = content[language].layoutTitle;
+
+    document.getElementById("station-info-task").textContent = content[language].stationInfoTask;
+    document.getElementById("station-info-description").textContent = content[language].stationInfoDescription;
+    document.getElementById("station-info-task-time").textContent = content[language].stationInfoTaskTime;
+
+    document.getElementById("param-cycle-time-label").innerHTML = `<strong>${content[language].cycleTime}</strong>`;
+    document.getElementById("param-manual-cost-label").innerHTML = `<strong>${content[language].manualCost}</strong>`;
+    document.getElementById("param-auto-cost-label").innerHTML = `<strong>${content[language].autoCost}</strong>`;
+    document.getElementById("param-labor-label").innerHTML = `<strong>${content[language].labor}</strong>`;
+    document.getElementById("param-working-label").innerHTML = `<strong>${content[language].workingHours}</strong>`;
+    document.getElementById("param-maintenance-label").innerHTML = `<strong>${content[language].maintenance}</strong>`;
+    document.getElementById("param-horizon-label").innerHTML = `<strong>${content[language].horizon}</strong>`;
+    
+    document.getElementById("x-axis-label").textContent = content[language].xAxisLabel;
+
+    document.querySelectorAll("td[data-objective]").forEach(td => {
+        const key = td.getAttribute("data-objective");
+        td.innerHTML = `<strong>${content[language].objectives[key]}</strong>`;
+    });
+
+    document.querySelectorAll("button[data-objective]").forEach(button => {
+        const key = button.getAttribute("data-objective");
+        button.textContent = content[language].objectives[key];
+      });
+
 }

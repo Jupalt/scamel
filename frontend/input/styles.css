@@ -6,7 +6,7 @@ body {
 }
 
 .container {
-    max-width: 700px;
+    max-width: 750px;
     background: white;
     padding: 20px;
     border-radius: 10px;
@@ -14,8 +14,44 @@ body {
     margin: auto;
 }
 
+#header {
+    display: flex;
+    justify-content: center; /* Zentriert die Überschrift */
+    align-items: center;
+    position: relative; /* Ermöglicht es, den Sprachumschalter absolut zu positionieren */
+    width: 100%;
+    padding: 20px;
+}
+
 h2 {
+    margin: 0;
+    text-align: center; /* Überschrift wird zentriert */
     color: #333;
+    position: absolute; /* Ermöglicht es, die Überschrift unabhängig zu positionieren */
+    left: 50%;
+    transform: translateX(-50%); /* Korrektur für die genaue Zentrierung */
+}
+
+.language-switch-container {
+    display: flex;
+    right: 30px;
+    position: absolute;
+}
+
+.language-option {
+    padding: 5px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    margin: 0;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+
+/* Box für die ausgewählte Sprache */
+.active {
+    background-color: #0E9682;
+    color: white;
 }
 
 .section {
