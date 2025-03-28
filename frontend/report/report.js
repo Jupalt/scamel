@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
             tableBody.appendChild(row);
         }
+        console.log(objectives);
         const langEn = document.getElementById("lang-en");
         const langCn = document.getElementById("lang-cn");
     
@@ -100,6 +101,8 @@ async function loadGraphs(objectives, taskDescriptions, taskTimes, stationResult
     } else if (graphCount === 3) {
         container.classList.add("three-graphs");
     } else if (graphCount === 4) {
+        container.classList.add("four-graphs");
+    } else if (graphCount === 5) {
         container.classList.add("four-graphs");
     }
 
@@ -183,7 +186,7 @@ function drawGraph(graphDiv, stations, taskTimes, taskDescriptions, objective, c
 
     // Beschriftung der x-Achse
     svg.append("text")
-        .attr("id", "x-axis-label")
+        .attr("class", "x-axis-label")
         .attr("x", width / 2)  // Zentriert auf der X-Achse
         .attr("y", height - margin.bottom + 30)  // Direkt unter der X-Achse
         .attr("text-anchor", "middle")  // Horizontale Ausrichtung
@@ -250,6 +253,8 @@ function drawGraph(graphDiv, stations, taskTimes, taskDescriptions, objective, c
     });
 
     svg.append("text")
+        .attr("class", "graph-title")
+        .attr("data-objective", objective)
         .attr("x", width / 2)
         .attr("y", margin.top / 2)
         .attr("text-anchor", "middle")
@@ -281,6 +286,7 @@ async function createObjectiveButtons(stationResults, taskDescriptions, taskTime
         button.classList.add("objective-button");
         button.id = key; // Key als ID setzen
         button.setAttribute("data-objective", key);
+        console.log(key);
         button.textContent = formatTitle(key);
 
         if (key === "Current_Status") {
@@ -418,7 +424,7 @@ function showTaskDescription(stationId, stations, parallel_stations, taskDescrip
     document.getElementById('station-title').innerText = `Station ${stationId}`;
 
     if (stationType === 'manual') {
-        document.getElementById('parallel-stations').innerText = `Number of Workers: ${parallel_stations}`;
+        document.getElementById('parallel-stations').innerText = `${content[globalLanguage].numberOfWorkers}: ${parallel_stations}`;
     } else if (stationType === 'automatic') {
         document.getElementById('parallel-stations').innerText = `${content[globalLanguage].numberOfRobots}: ${parallel_stations}`;
     }
@@ -470,6 +476,7 @@ content = {
         tooltipTask: "Task",
         tooltipTaskTime: "Task Time",
         tooltipSeconds: "seconds",
+        numberOfWorkers: "Number of Workers",
         numberOfRobots: "Number of Robots",
         cycleTime: "Cycle Time Requirement",
         manualCost: "Initial Cost for Opening a Manual Station",
@@ -480,10 +487,11 @@ content = {
         horizon: "Project horizon",
         xAxisLabel: "Number of Workers/Robots",
         objectives: {
+            Current_Status: "Current Status",
             Minimize_Total_Cost_of_Ownership: "Minimize Total Cost of Ownership",
             Minimize_Initial_Investment: "Minimize Initial Investment",
-            Minimize_Number_of_Stations: "Minimize Number of Stations",
-            Maximize_Degree_of_Automation: "Maximize Degree of Automation"
+            Minimize_Stations: "Minimize Stations",
+            Maximize_Automation: "Maximize Automation"
         }
     },
 
@@ -501,6 +509,7 @@ content = {
         tooltipTask: "任务",
         tooltipTaskTime: "任务时间",
         tooltipSeconds: "秒",
+        numberOfWorkers: "工人数量",
         numberOfRobots: "机器人数量",
         cycleTime: "周期时间要求",
         manualCost: "人工工位的初始成本",
@@ -511,10 +520,11 @@ content = {
         horizon: "项目周期",
         xAxisLabel: "工人/机器人数量",
         objectives: {
+            Current_Status: "当前状态",
             Minimize_Total_Cost_of_Ownership: "最小化总体拥有成本",
             Minimize_Initial_Investment: "最小化初始投资金额",
-            Minimize_Number_of_Stations: "最小化站点数量",
-            Maximize_Degree_of_Automation: "最大自动化程度"
+            Minimize_Stations: "尽量减少站点",
+            Maximize_Automation: "自动化最大化"
         }
     }
 }
@@ -541,7 +551,9 @@ function switchLanguage(language){
     document.getElementById("param-maintenance-label").innerHTML = `<strong>${content[language].maintenance}</strong>`;
     document.getElementById("param-horizon-label").innerHTML = `<strong>${content[language].horizon}</strong>`;
     
-    document.getElementById("x-axis-label").textContent = content[language].xAxisLabel;
+    document.querySelectorAll(".x-axis-label").forEach(el => {
+        el.textContent = content[language].xAxisLabel;
+    });
 
     document.querySelectorAll("td[data-objective]").forEach(td => {
         const key = td.getAttribute("data-objective");
@@ -551,6 +563,12 @@ function switchLanguage(language){
     document.querySelectorAll("button[data-objective]").forEach(button => {
         const key = button.getAttribute("data-objective");
         button.textContent = content[language].objectives[key];
-      });
+    });
 
+    document.querySelectorAll(".graph-title").forEach(title => {
+        const key = title.getAttribute("data-objective");
+        if (key && content[language].objectives[key]) {
+          title.textContent = content[language].objectives[key];
+        }
+    });
 }
