@@ -306,6 +306,7 @@ button:hover {
     width: 100%;
     max-width: 800px;
     aspect-ratio: 2 / 1;  /* oder feste Höhe, z. B. height: 400px; */
+    justify-self: center;
 }
 
 #current-status-graph {

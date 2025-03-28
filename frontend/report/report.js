@@ -497,12 +497,12 @@ content = {
 
     cn: {
         objective: "目标",
-        numberOfProcesses: "进程数量",
+        numberOfProcesses: "流程数量",
         numberOfStations: "站点数量",
         totalCostOfOwnership: "总拥有成本",
-        initialInvestment: "初始投资",
+        initialInvestment: "初始投资金额",
         expectedLaborCosts: "预计人工成本",
-        layoutTitle: "可能的布局",
+        layoutTitle: "可选布局",
         stationInfoTask: "任务",
         stationInfoDescription: "说明",
         stationInfoTaskTime: "任务时间",
@@ -523,8 +523,8 @@ content = {
             Current_Status: "当前状态",
             Minimize_Total_Cost_of_Ownership: "最小化总体拥有成本",
             Minimize_Initial_Investment: "最小化初始投资金额",
-            Minimize_Stations: "尽量减少站点",
-            Maximize_Automation: "自动化最大化"
+            Minimize_Stations: "最小化站点数量",
+            Maximize_Automation: "最大自动化程度"
         }
     }
 }
